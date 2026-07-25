@@ -1,0 +1,701 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Ayushi Kashyap — MBA Professional</title>
+  <meta name="description" content="Ayushi Kashyap — MBA Professional. Get in touch at ayushikashyap39@gmail.com or call 9973330753." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet" />
+
+  <style>
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    :root {
+      --rose-blush: #f2c4b8;
+      --rose-light: #f7ddd7;
+      --rose-pale: #fdf0ed;
+      --card-w: 680px;
+      --card-h: 390px;
+      --card-depth: 18px;
+    }
+
+    html, body {
+      height: 100%;
+      overflow: hidden;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: #1a1118;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100dvh;
+      user-select: none;
+      cursor: grab;
+    }
+
+    body.dragging {
+      cursor: grabbing;
+    }
+
+    /* Ambient background */
+    .bg-ambient {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      background:
+        radial-gradient(ellipse 80% 60% at 20% 30%, rgba(242,196,184,0.12) 0%, transparent 60%),
+        radial-gradient(ellipse 60% 80% at 80% 70%, rgba(180,140,200,0.08) 0%, transparent 60%),
+        radial-gradient(ellipse 100% 100% at 50% 50%, #1a1118 0%, #120e16 100%);
+      pointer-events: none;
+    }
+
+    /* Hint text */
+    .hint {
+      position: fixed;
+      bottom: 32px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 10;
+      color: rgba(255,255,255,0.28);
+      font-size: 12px;
+      font-weight: 300;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      transition: opacity 0.8s ease;
+      white-space: nowrap;
+    }
+    .hint svg {
+      width: 16px;
+      height: 16px;
+      opacity: 0.5;
+      flex-shrink: 0;
+    }
+    .hint.hidden {
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    /* Scene */
+    .scene {
+      perspective: 1000px;
+      perspective-origin: 50% 45%;
+      position: relative;
+      z-index: 1;
+      width: var(--card-w);
+      height: var(--card-h);
+    }
+
+    /* Card */
+    .card {
+      width: var(--card-w);
+      height: var(--card-h);
+      position: relative;
+      transform-style: preserve-3d;
+      transform: rotateX(4deg) rotateY(-8deg);
+      will-change: transform;
+      filter: drop-shadow(0 40px 80px rgba(0,0,0,0.6)) drop-shadow(0 8px 20px rgba(242,196,184,0.15));
+    }
+
+    /* Card face shared */
+    .card-face {
+      position: absolute;
+      inset: 0;
+      border-radius: 18px;
+      backface-visibility: hidden;
+      -webkit-backface-visibility: hidden;
+    }
+
+    /* FRONT FACE */
+    .card-front {
+      background: #faf7f5;
+      overflow: hidden;
+    }
+
+    /* Diagonal rose watercolor stroke */
+    .card-front::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background:
+        linear-gradient(
+          135deg,
+          transparent 35%,
+          rgba(242,196,184,0.55) 45%,
+          rgba(242,196,184,0.75) 52%,
+          rgba(247,221,215,0.60) 58%,
+          rgba(250,230,225,0.35) 65%,
+          transparent 75%
+        );
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* Secondary stroke for watercolor texture */
+    .card-front::after {
+      content: '';
+      position: absolute;
+      width: 120%;
+      height: 60%;
+      top: 35%;
+      left: -10%;
+      background:
+        linear-gradient(
+          125deg,
+          transparent 30%,
+          rgba(242,196,184,0.25) 40%,
+          rgba(247,221,215,0.40) 50%,
+          rgba(242,196,184,0.20) 60%,
+          transparent 70%
+        );
+      transform: rotate(-3deg);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* Profile photo */
+    .profile-wrap {
+      position: absolute;
+      top: 38px;
+      left: 44px;
+      z-index: 2;
+    }
+
+    .profile-ring {
+      width: 120px;
+      height: 120px;
+      border-radius: 50%;
+      padding: 3px;
+      background: linear-gradient(135deg, #e8b8ad, #c9a0a0);
+      box-shadow: 0 6px 24px rgba(200,140,130,0.35);
+    }
+
+    .profile-ring img {
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      object-fit: cover;
+      object-position: 17% 30%;
+      display: block;
+      border: 3px solid #faf7f5;
+    }
+
+    /* Name */
+    .card-name {
+      position: absolute;
+      bottom: 88px;
+      left: 44px;
+      z-index: 2;
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 28px;
+      font-weight: 400;
+      color: #5a4a4a;
+      letter-spacing: 0.04em;
+      white-space: nowrap;
+    }
+
+    /* Right-side info panel */
+    .card-info {
+      position: absolute;
+      right: 44px;
+      bottom: 44px;
+      z-index: 2;
+      text-align: right;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .card-title {
+      font-family: 'Cormorant Garamond', serif;
+      font-style: italic;
+      font-size: 20px;
+      font-weight: 400;
+      color: #8a7070;
+      letter-spacing: 0.03em;
+    }
+
+    .card-divider {
+      width: 40px;
+      height: 1.5px;
+      background: linear-gradient(90deg, transparent, #c9a0a0, transparent);
+      align-self: flex-end;
+    }
+
+    .card-phone {
+      font-family: 'Inter', sans-serif;
+      font-size: 14px;
+      font-weight: 400;
+      color: #7a6464;
+      letter-spacing: 0.04em;
+    }
+
+    .card-email {
+      font-family: 'Inter', sans-serif;
+      font-size: 13px;
+      font-weight: 300;
+      color: #7a6464;
+      letter-spacing: 0.01em;
+    }
+
+    /* QR code top-right */
+    .qr-wrap {
+      position: absolute;
+      top: 22px;
+      right: 22px;
+      z-index: 2;
+      width: 68px;
+      height: 68px;
+      background: #fff;
+      border-radius: 6px;
+      padding: 4px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.10);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .qr-img {
+      width: 60px;
+      height: 60px;
+      display: block;
+      image-rendering: crisp-edges;
+    }
+
+    /* BACK FACE */
+    .card-back {
+      background: #ffffff;
+      transform: rotateY(180deg);
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* Subtle back pattern */
+    .back-pattern {
+      position: absolute;
+      inset: 0;
+      opacity: 0.04;
+      background-image:
+        repeating-linear-gradient(
+          45deg,
+          #c9a0a0 0,
+          #c9a0a0 1px,
+          transparent 0,
+          transparent 50%
+        );
+      background-size: 14px 14px;
+    }
+
+    .back-logo-wrap {
+      position: relative;
+      z-index: 2;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .back-monogram {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 64px;
+      font-weight: 300;
+      color: #d4b0a8;
+      letter-spacing: 0.12em;
+      line-height: 1;
+    }
+
+    .back-tagline {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 13px;
+      font-style: italic;
+      color: #c0a0a0;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+    }
+
+    .back-line {
+      width: 48px;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, #d4b0a8, transparent);
+    }
+
+    /* DEPTH / EDGES */
+    .card-edge-top {
+      position: absolute;
+      width: 100%;
+      height: var(--card-depth);
+      background: linear-gradient(to bottom, #d4bfbc, #c8b0ad);
+      border-radius: 18px 18px 0 0;
+      top: 0;
+      left: 0;
+      transform: rotateX(90deg);
+      transform-origin: top center;
+    }
+
+    .card-edge-bottom {
+      position: absolute;
+      width: 100%;
+      height: var(--card-depth);
+      background: linear-gradient(to top, #c0a8a5, #d4bfbc);
+      border-radius: 0 0 18px 18px;
+      bottom: 0;
+      left: 0;
+      transform: rotateX(-90deg);
+      transform-origin: bottom center;
+    }
+
+    .card-edge-left {
+      position: absolute;
+      width: var(--card-depth);
+      height: 100%;
+      background: linear-gradient(to right, #c0a8a5, #d4bfbc);
+      border-radius: 18px 0 0 18px;
+      top: 0;
+      left: 0;
+      transform: rotateY(-90deg);
+      transform-origin: left center;
+    }
+
+    .card-edge-right {
+      position: absolute;
+      width: var(--card-depth);
+      height: 100%;
+      background: linear-gradient(to left, #c0a8a5, #d4bfbc);
+      border-radius: 0 18px 18px 0;
+      top: 0;
+      right: 0;
+      transform: rotateY(90deg);
+      transform-origin: right center;
+    }
+
+    /* Light sheen on front */
+    .card-sheen {
+      position: absolute;
+      inset: 0;
+      z-index: 5;
+      border-radius: 18px;
+      background: linear-gradient(
+        135deg,
+        rgba(255,255,255,0.18) 0%,
+        rgba(255,255,255,0.06) 40%,
+        transparent 60%
+      );
+      pointer-events: none;
+    }
+
+    /* RESPONSIVE */
+    @media (max-width: 720px) {
+      :root {
+        --card-w: min(88vw, 400px);
+        --card-h: calc(var(--card-w) * 0.574);
+        --card-depth: 12px;
+      }
+
+      .card-name {
+        font-size: clamp(14px, 4vw, 22px);
+        bottom: clamp(40px, 10vw, 70px);
+        left: clamp(16px, 5vw, 44px);
+      }
+
+      .profile-wrap {
+        top: clamp(14px, 4vw, 38px);
+        left: clamp(14px, 4vw, 44px);
+      }
+
+      .profile-ring {
+        width: clamp(60px, 16vw, 100px);
+        height: clamp(60px, 16vw, 100px);
+      }
+
+      .card-info {
+        right: clamp(12px, 4vw, 44px);
+        bottom: clamp(12px, 4vw, 44px);
+        gap: 3px;
+      }
+
+      .card-title {
+        font-size: clamp(11px, 3vw, 17px);
+      }
+
+      .card-phone,
+      .card-email {
+        font-size: clamp(8px, 2.2vw, 13px);
+      }
+
+      .qr-wrap {
+        width: clamp(36px, 10vw, 60px);
+        height: clamp(36px, 10vw, 60px);
+        top: 12px;
+        right: 12px;
+        padding: 3px;
+      }
+
+      #qrcode-front canvas,
+      #qrcode-front img {
+        width: clamp(30px, 8vw, 54px) !important;
+        height: clamp(30px, 8vw, 54px) !important;
+      }
+
+      .back-monogram {
+        font-size: clamp(32px, 10vw, 56px);
+      }
+
+      .hint {
+        font-size: 10px;
+        bottom: 20px;
+      }
+    }
+
+    /* Floating particles */
+    .particle {
+      position: fixed;
+      border-radius: 50%;
+      pointer-events: none;
+      z-index: 0;
+      opacity: 0;
+      animation: float-up var(--dur, 8s) var(--delay, 0s) infinite ease-in-out;
+    }
+
+    @keyframes float-up {
+      0%   { opacity: 0; transform: translateY(20px) scale(0.5); }
+      20%  { opacity: var(--max-op, 0.3); }
+      80%  { opacity: var(--max-op, 0.3); }
+      100% { opacity: 0; transform: translateY(-120px) scale(1.2); }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="bg-ambient" aria-hidden="true"></div>
+
+  <!-- Floating ambient particles -->
+  <div class="particle" style="width:6px;height:6px;background:#f2c4b8;left:15%;bottom:20%;--dur:9s;--delay:0s;--max-op:0.25;"></div>
+  <div class="particle" style="width:4px;height:4px;background:#c9a0a0;left:30%;bottom:15%;--dur:11s;--delay:2s;--max-op:0.2;"></div>
+  <div class="particle" style="width:5px;height:5px;background:#f7ddd7;left:70%;bottom:25%;--dur:8s;--delay:1s;--max-op:0.22;"></div>
+  <div class="particle" style="width:3px;height:3px;background:#e8b8ad;left:85%;bottom:18%;--dur:12s;--delay:3s;--max-op:0.18;"></div>
+  <div class="particle" style="width:7px;height:7px;background:#d4b0a8;left:50%;bottom:10%;--dur:10s;--delay:4s;--max-op:0.15;"></div>
+
+  <!-- 3D Scene -->
+  <div class="scene" id="scene" aria-label="Interactive 3D Business Card">
+    <div class="card" id="card" role="img" aria-label="Ayushi Kashyap Business Card">
+
+      <!-- FRONT -->
+      <div class="card-face card-front">
+
+        <div class="profile-wrap">
+          <div class="profile-ring">
+            <img src="ayushi_profile.png" alt="Ayushi Kashyap" />
+          </div>
+        </div>
+
+        <div class="card-name">Ayushi Kashyap</div>
+
+        <div class="card-info">
+          <div class="card-title">MBA Professional</div>
+          <div class="card-divider"></div>
+          <div class="card-phone">9973330753</div>
+          <div class="card-email">ayushikashyap39@gmail.com</div>
+        </div>
+
+        <div class="qr-wrap" aria-label="QR Code linking to this page">
+          <img src="qr.png" alt="QR Code" class="qr-img" />
+        </div>
+
+        <div class="card-sheen" aria-hidden="true"></div>
+      </div>
+
+      <!-- BACK -->
+      <div class="card-face card-back">
+        <div class="back-pattern" aria-hidden="true"></div>
+        <div class="back-logo-wrap">
+          <div class="back-monogram">AK</div>
+          <div class="back-line"></div>
+          <div class="back-tagline">MBA Professional</div>
+        </div>
+      </div>
+
+      <!-- DEPTH EDGES -->
+      <div class="card-edge-top"    aria-hidden="true"></div>
+      <div class="card-edge-bottom" aria-hidden="true"></div>
+      <div class="card-edge-left"   aria-hidden="true"></div>
+      <div class="card-edge-right"  aria-hidden="true"></div>
+
+    </div>
+  </div>
+
+  <!-- Hint -->
+  <p class="hint" id="hint" aria-live="polite">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+      <path stroke-linecap="round" stroke-linejoin="round" d="M15.042 21.672L13.684 16.6m0 0l-2.51 2.225.569-9.47 5.227 7.917-3.286-.672zm-7.518-.267A8.25 8.25 0 1118.25 10.5M8.288 14.212A5.25 5.25 0 1117.25 10.5"/>
+    </svg>
+    Drag to rotate &middot; Tap to reset
+  </p>
+
+  <script>
+    // 3D Card Interaction
+    var card  = document.getElementById('card');
+    var scene = document.getElementById('scene');
+    var hint  = document.getElementById('hint');
+
+    var rotX = 4, rotY = -8;
+    var velX = 0, velY = 0;
+    var isDragging = false;
+    var lastX = 0, lastY = 0;
+    var rafId = null;
+    var interacted = false;
+
+    var DAMPING     = 0.88;
+    var SENSITIVITY = 0.40;
+
+    function applyTransform() {
+      var rx = Math.max(-65, Math.min(65, rotX));
+      var ry = Math.max(-85, Math.min(85, rotY));
+      card.style.transform = 'rotateX(' + rx + 'deg) rotateY(' + ry + 'deg)';
+    }
+
+    function resetCard() {
+      if (rafId) { cancelAnimationFrame(rafId); rafId = null; }
+      velX = 0; velY = 0;
+      rotX = 4; rotY = -8;
+      card.style.transition = 'transform 0.65s cubic-bezier(0.4,0,0.2,1)';
+      applyTransform();
+      setTimeout(function() { card.style.transition = ''; }, 700);
+    }
+
+    function inertiaLoop() {
+      if (isDragging) return;
+      velX *= DAMPING;
+      velY *= DAMPING;
+      rotX += velX;
+      rotY += velY;
+      var speed = Math.abs(velX) + Math.abs(velY);
+      if (speed < 0.01) {
+        velX = 0; velY = 0;
+        rafId = null;
+        return;
+      }
+      applyTransform();
+      rafId = requestAnimationFrame(inertiaLoop);
+    }
+
+    function startDrag(x, y) {
+      isDragging = true;
+      lastX = x; lastY = y;
+      document.body.classList.add('dragging');
+      if (rafId) { cancelAnimationFrame(rafId); rafId = null; }
+      if (!interacted) {
+        interacted = true;
+        hint.classList.add('hidden');
+      }
+    }
+
+    function moveDrag(x, y) {
+      if (!isDragging) return;
+      var dx = x - lastX;
+      var dy = y - lastY;
+      velY = dx * SENSITIVITY;
+      velX = -dy * SENSITIVITY;
+      rotY += velY;
+      rotX += velX;
+      lastX = x; lastY = y;
+      applyTransform();
+    }
+
+    function endDrag() {
+      if (!isDragging) return;
+      isDragging = false;
+      document.body.classList.remove('dragging');
+      rafId = requestAnimationFrame(inertiaLoop);
+    }
+
+    // Mouse
+    scene.addEventListener('mousedown', function(e) { e.preventDefault(); startDrag(e.clientX, e.clientY); });
+    window.addEventListener('mousemove', function(e) { moveDrag(e.clientX, e.clientY); });
+    window.addEventListener('mouseup', endDrag);
+    scene.addEventListener('dblclick', function(e) { e.preventDefault(); resetCard(); });
+
+    // Parallax hover (when not dragging)
+    scene.addEventListener('mousemove', function(e) {
+      if (isDragging) return;
+      var rect = scene.getBoundingClientRect();
+      var dx = (e.clientX - (rect.left + rect.width  / 2)) / (rect.width  / 2);
+      var dy = (e.clientY - (rect.top  + rect.height / 2)) / (rect.height / 2);
+      if (Math.abs(velX) + Math.abs(velY) < 0.5) {
+        rotY = dx * 22;
+        rotX = -dy * 14;
+        applyTransform();
+      }
+    });
+
+    scene.addEventListener('mouseleave', function() {
+      if (isDragging) return;
+      card.style.transition = 'transform 1.2s cubic-bezier(0.25,0.46,0.45,0.94)';
+      rotX = 4; rotY = -8;
+      applyTransform();
+      setTimeout(function() { card.style.transition = ''; }, 1300);
+    });
+
+    // Touch
+    var touchStartTime = 0;
+    var tapStartX = 0, tapStartY = 0;
+
+    scene.addEventListener('touchstart', function(e) {
+      if (e.touches.length === 1) {
+        touchStartTime = Date.now();
+        tapStartX = e.touches[0].clientX;
+        tapStartY = e.touches[0].clientY;
+        startDrag(e.touches[0].clientX, e.touches[0].clientY);
+      }
+    }, { passive: true });
+
+    scene.addEventListener('touchmove', function(e) {
+      if (e.touches.length === 1) moveDrag(e.touches[0].clientX, e.touches[0].clientY);
+    }, { passive: true });
+
+    scene.addEventListener('touchend', function(e) {
+      var dt = Date.now() - touchStartTime;
+      var moved = Math.abs(e.changedTouches[0].clientX - tapStartX) + Math.abs(e.changedTouches[0].clientY - tapStartY);
+      if (dt < 220 && moved < 12) resetCard();
+      endDrag();
+    });
+
+    // Hide hint after 4s
+    setTimeout(function() {
+      if (!interacted) hint.classList.add('hidden');
+    }, 4000);
+
+    // Intro animation — gently tilt to reveal 3D depth
+    var frame = 0;
+    var introId = requestAnimationFrame(introAnim);
+
+    function introAnim() {
+      frame++;
+      var t = frame / 120;
+      if (t < 1 && !isDragging) {
+        rotY = -8 + Math.sin(t * Math.PI) * -24;
+        rotX = 4  + Math.sin(t * Math.PI) * 10;
+        applyTransform();
+        introId = requestAnimationFrame(introAnim);
+      } else {
+        rotX = 4; rotY = -8;
+        applyTransform();
+      }
+    }
+
+    applyTransform();
+  </script>
+</body>
+</html>
