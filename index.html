@@ -22,7 +22,7 @@
       --rose-pale: #fdf0ed;
       --card-w: 680px;
       --card-h: 390px;
-      --card-depth: 18px;
+      --card-depth: 6px;
     }
 
     html, body {
@@ -105,7 +105,17 @@
       transform-style: preserve-3d;
       transform: rotateX(4deg) rotateY(-8deg);
       will-change: transform;
-      filter: drop-shadow(0 40px 80px rgba(0,0,0,0.6)) drop-shadow(0 8px 20px rgba(242,196,184,0.15));
+    }
+
+    /* Card Shadow to avoid flattening preserve-3d */
+    .card-shadow {
+      position: absolute;
+      inset: 0;
+      border-radius: 18px;
+      background: transparent;
+      box-shadow: 0 40px 80px rgba(0,0,0,0.6), 0 8px 20px rgba(242,196,184,0.15);
+      transform: translateZ(calc(var(--card-depth) / -2 - 1px));
+      pointer-events: none;
     }
 
     /* Card face shared */
@@ -121,6 +131,7 @@
     .card-front {
       background: #faf7f5;
       overflow: hidden;
+      transform: translateZ(calc(var(--card-depth) / 2));
     }
 
     /* Diagonal rose watercolor stroke */
@@ -276,7 +287,7 @@
     /* BACK FACE */
     .card-back {
       background: #ffffff;
-      transform: rotateY(180deg);
+      transform: rotateY(180deg) translateZ(calc(var(--card-depth) / 2));
       overflow: hidden;
       display: flex;
       align-items: center;
@@ -332,53 +343,14 @@
       background: linear-gradient(90deg, transparent, #d4b0a8, transparent);
     }
 
-    /* DEPTH / EDGES */
-    .card-edge-top {
+    /* DEPTH / EDGES (Layered stack) */
+    .card-layer {
       position: absolute;
-      width: 100%;
-      height: var(--card-depth);
-      background: linear-gradient(to bottom, #d4bfbc, #c8b0ad);
-      border-radius: 18px 18px 0 0;
-      top: 0;
-      left: 0;
-      transform: rotateX(90deg);
-      transform-origin: top center;
-    }
-
-    .card-edge-bottom {
-      position: absolute;
-      width: 100%;
-      height: var(--card-depth);
-      background: linear-gradient(to top, #c0a8a5, #d4bfbc);
-      border-radius: 0 0 18px 18px;
-      bottom: 0;
-      left: 0;
-      transform: rotateX(-90deg);
-      transform-origin: bottom center;
-    }
-
-    .card-edge-left {
-      position: absolute;
-      width: var(--card-depth);
-      height: 100%;
-      background: linear-gradient(to right, #c0a8a5, #d4bfbc);
-      border-radius: 18px 0 0 18px;
-      top: 0;
-      left: 0;
-      transform: rotateY(-90deg);
-      transform-origin: left center;
-    }
-
-    .card-edge-right {
-      position: absolute;
-      width: var(--card-depth);
-      height: 100%;
-      background: linear-gradient(to left, #c0a8a5, #d4bfbc);
-      border-radius: 0 18px 18px 0;
-      top: 0;
-      right: 0;
-      transform: rotateY(90deg);
-      transform-origin: right center;
+      inset: 0;
+      border-radius: 18px;
+      background: #e3c5bc;
+      box-shadow: inset 0 0 10px rgba(0,0,0,0.06);
+      pointer-events: none;
     }
 
     /* Light sheen on front */
@@ -401,7 +373,7 @@
       :root {
         --card-w: min(94vw, 420px);
         --card-h: calc(var(--card-w) * 0.574);
-        --card-depth: 10px;
+        --card-depth: 6px;
       }
 
       .card-name {
@@ -486,6 +458,8 @@
   <div class="scene" id="scene" aria-label="Interactive 3D Business Card">
     <div class="card" id="card" role="img" aria-label="Ayushi Kashyap Business Card">
 
+      <div class="card-shadow"></div>
+
       <!-- FRONT -->
       <div class="card-face card-front">
 
@@ -521,11 +495,18 @@
         </div>
       </div>
 
-      <!-- DEPTH EDGES -->
-      <div class="card-edge-top"    aria-hidden="true"></div>
-      <div class="card-edge-bottom" aria-hidden="true"></div>
-      <div class="card-edge-left"   aria-hidden="true"></div>
-      <div class="card-edge-right"  aria-hidden="true"></div>
+      <!-- DEPTH LAYERS (gives smooth rounded 3D edge) -->
+      <div class="card-layer" style="transform: translateZ(-2.5px);"></div>
+      <div class="card-layer" style="transform: translateZ(-2.0px);"></div>
+      <div class="card-layer" style="transform: translateZ(-1.5px);"></div>
+      <div class="card-layer" style="transform: translateZ(-1.0px);"></div>
+      <div class="card-layer" style="transform: translateZ(-0.5px);"></div>
+      <div class="card-layer" style="transform: translateZ(0.0px);"></div>
+      <div class="card-layer" style="transform: translateZ(0.5px);"></div>
+      <div class="card-layer" style="transform: translateZ(1.0px);"></div>
+      <div class="card-layer" style="transform: translateZ(1.5px);"></div>
+      <div class="card-layer" style="transform: translateZ(2.0px);"></div>
+      <div class="card-layer" style="transform: translateZ(2.5px);"></div>
 
     </div>
   </div>
